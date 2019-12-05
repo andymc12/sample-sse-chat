@@ -27,10 +27,15 @@ import javax.ws.rs.sse.Sse;
 import javax.ws.rs.sse.SseBroadcaster;
 import javax.ws.rs.sse.SseEventSink;
 
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.Outgoing;
+
 @Path("chat")
 @RolesAllowed("ChatUsers")
 @ApplicationScoped
 public class ChatResource {
+
+    private int counter = 0;
 
     @Context
     private SecurityContext secContext;
@@ -87,5 +92,22 @@ public class ChatResource {
                   .id(""+chatMessage.getMsgID())
                   .mediaType(MediaType.APPLICATION_JSON_TYPE)
                   .build();
+    }
+
+    @Outgoing("messages")
+    public String createTestMessage() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return "ReactiveMessenger|Test message " + counter++;
+    }
+
+    @Incoming("messages")
+    public void sendMessageFromChannel(String message) {
+        System.out.println("Received a message " + message);
+        String[] userAndMessage = message.split("\\|");
+        sendMessage(userAndMessage[0], userAndMessage[1]);
     }
 }
